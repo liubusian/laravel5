@@ -1,8 +1,8 @@
 <?php
-namespace liubusian\laravel5\Service;
+namespace Elmer\Laravel5\Service;
 
-use liubusian\laravel5\Service\BaseService;
-use liubusian\laravel5\Traits\APIServiceHandle;
+use Elmer\Laravel5\Service\BaseService;
+use Elmer\Laravel5\Traits\APIServiceHandle;
 
 /**
 * API格式服務

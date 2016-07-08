@@ -1,5 +1,5 @@
 <?php
-namespace liubusian\laravel5\Traits;
+namespace Elmer\Laravel5\Traits;
 
 trait APIServiceHandle{
 

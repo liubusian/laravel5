@@ -1,6 +1,6 @@
 <?php
 
-namespace liubusian\laravel5\Repository\Eloquent;
+namespace Elmer\Laravel5\Repository\Eloquent;
 use Prettus\Repository\Eloquent\BaseRepository as PrettusRepository;
 /**
 * 擴展Prettus\Repository\Eloquent\BaseRepository方法

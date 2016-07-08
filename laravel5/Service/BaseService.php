@@ -1,5 +1,5 @@
 <?php
-namespace liubusian\laravel5\Service;
+namespace Elmer\Laravel5\Service;
 
 use App;
 use Exception;
