@@ -1,5 +1,5 @@
 {
-  "name": "liubusian/laravel5",
+  "name": "liubusian/laravel5-Plugins",
   "description": "Laravel 5 - Plugin",
   "keywords": ["laravel", "repository", "service"],
   "license": "MIT",
@@ -12,16 +12,16 @@
   ],
   "support": {
     "email": "elmerliu98133041@gmail.com",
-    "issues":"https://github.com/liubusian/laravel5/issues",
-    "wiki":"https://github.com/liubusian/laravel5",
-    "source":"https://github.com/liubusian/laravel5"
+    "issues":"https://github.com/liubusian/laravel5-Plugins/issues",
+    "wiki":"https://github.com/liubusian/laravel5-Plugins",
+    "source":"https://github.com/liubusian/laravel5-Plugins"
   },
   "require": {
     "prettus/l5-repository": "^2.1"
   },
   "autoload": {
     "psr-4": {
-      "Elmer\\Laravel5\\": "src/"
+      "Elmer\\": "src/"
     }
   },
   "config": {
