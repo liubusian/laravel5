@@ -1,7 +1,8 @@
 <?php
-namespace Elmer\Laravel5\Service;
+namespace Elmer\Service;
 
 use App;
+use Entity;
 use Exception;
 use Prettus\Repository\Contracts\RepositoryInterface;
 
@@ -13,19 +14,25 @@ class BaseService
 	
 	protected $repositories = [];
 	protected $service;
+	protected $requestEntity;
+	protected $responseEntity;
+	protected $entities = [];
 
 	public function __construct(){
 		$this->boot();
 	}
 	
-	protected function __get($key){
-		$repositories = $this->repositories();
+	public function __get($key){
+		$repositories = $this->repositories;
 
         if (array_key_exists($key, $repositories)) {
             return $repositories[$key];
-        } elseif(isset($this->$key)) {
+        }
+
+        if(isset($this->$key)) {
             return $this->$key;
         }
+
         return null;
 	}
 
@@ -36,15 +43,13 @@ class BaseService
 		}
 
 		if(!class_exists($class)){
-			throw new Exception("The class '$class' does not exists.");
+			throw new Exception("The class '$class' does not exists.",-2);
 		}
 
 		$repository = App::make($class);
 
-		if(class_exists(RepositoryInterface)){
-			if(!$repository instanceof RepositoryInterface){
-				return false;
-			}
+		if(!$repository instanceof RepositoryInterface){
+			return false;
 		}
 
 		$this->repositories[$name] = $repository;
@@ -56,7 +61,7 @@ class BaseService
 
 	protected function service($class){
 		if(!class_exists($class)){
-			throw new Exception("The class '$class' does not exists.");
+			throw new Exception("The class '$class' does not exists.",-2);
 		}
 
 		return App::make($class);

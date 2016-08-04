@@ -7,12 +7,26 @@ use Prettus\Repository\Eloquent\BaseRepository as PrettusRepository;
 */
 abstract BaseRepository extends PrettusRepository
 {
+	/**
+	 * 設定條件 => BETWEEN $from AND $TO
+	 * @param string $field 欄位名稱
+	 * @param mixed $form  起始
+	 * @param mixed $to    結束
+	 */
 	public function setBetween($field,$form,$to){
         $this->model = $this->model->whereBetween($field,[$form,$to]);
         return $this;
     }
 
+    /**
+     * 設定條件 => WHERE $field $operator $value
+     * @param string $field    欄位名稱
+     * @param string $operator 操作( = <> > < >= <=)
+     * @param mixed $value    欄位值
+     * @param string $boolean  TYPE => AND | OR
+     */
     public function setWhere($field,$operator="=",$value=null,$boolean="and"){
+    	$boolean = strtolower($boolean);
         if($value == null){
             $value = $operator;
             $operator = "=";
@@ -21,7 +35,16 @@ abstract BaseRepository extends PrettusRepository
         return $this;
     }
 
+    /**
+     * 設定模糊查詢
+     * @param string $field    欄位名稱
+     * @param mixed $match    比對值
+     * @param string $operator Both | Left | Right
+     * @param string $boolean  AND | OR
+     */
     public function setLike($field,$match,$operator="both",$boolean="and"){
+    	$operator = strtolower($operator);
+    	$boolean = strtolower($boolean);
         $both = ["%",null,"%"];
         $left = ["%",null];
         $right = [null,"%"];
@@ -37,7 +60,13 @@ abstract BaseRepository extends PrettusRepository
         return $this;
     }
 
+    /**
+     * 設定排序
+     * @param string $field     欄位名稱
+     * @param string $direction asc | desc
+     */
     public function setSort($field, $direction="asc"){
+    	$direction = strtolower($direction);
         $this->model = $this->model->orderBy($field,$direction);
         return $this;
     }
@@ -51,6 +80,7 @@ abstract BaseRepository extends PrettusRepository
 	 * @return boolen        
 	 */
 	public function checkRowExist($field, $value=null, $operator="=", $boolean = 'and'){
+		$boolean = strtolower($boolean);
 		try {
 			$where= [];
 			if(is_array($field)){
@@ -85,14 +115,5 @@ abstract BaseRepository extends PrettusRepository
 		}
 		return true;
 	}
-
-    public function getPage($pageNum,$limit=null,$columns=['*']){    	
-    	$this->applyCriteria();
-        $this->applyScope();
-        $limit = request()->get('perPage', is_null($limit) ? config('repository.pagination.limit', 15) : $limit);
-        $result = $this->model->paginate($limit,$columns,'page',$pageNum);
-        $this->resetModel();
-        $this->resetScope();
-        return $this->parserResult($results);
-    }
+	
 }
