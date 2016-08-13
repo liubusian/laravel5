@@ -137,17 +137,15 @@ class BaseEntity implements Arrayable,Jsonable
 
 		$transforms = $this->transforms->all();
 
-		if(empty($transforms)){
-			return [];
-		}
-
 		$datas = empty($this->inputDatas)? []: $this->inputDatas;
 
-		if(empty($datas)){
-			return [];
+		if(empty($transforms) || empty($datas)){
+			$this->results = $datas;
+			return $this;
 		}
 
 		$tmp = [];
+		
 		foreach ($transforms as $transform) {			
 
 			$tmp = Transform::make($transform, $datas);
