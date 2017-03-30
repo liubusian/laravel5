@@ -15,7 +15,7 @@ use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Contracts\Support\Arrayable;
 
 /**
-* 將回傳的值重整
+* 欄位與值轉換設定器
 */
 class BaseTransform implements Jsonable,Arrayable
 {
@@ -69,6 +69,11 @@ class BaseTransform implements Jsonable,Arrayable
 
 	protected $items = [];
 
+	/**
+	 * 是否為關聯陣列
+	 * @param  array  $array match array
+	 * @return boolean        
+	 */
 	protected function isAssoc($array){
 
     	$keys = array_keys($array);
@@ -76,7 +81,17 @@ class BaseTransform implements Jsonable,Arrayable
         return array_keys($keys) !== $keys;
     }
 
+    /**
+     * 轉換欄位名稱
+     * @param  string $field  轉換前欄位
+     * @param  string $parent 父欄位名稱
+     * @return string         轉換後欄位
+     */
     protected function applySwap($field, $parent=''){
+
+    	/**
+    	 * 取得設定資訊
+    	 */
     	$rules = isset($this->swapConfig['settings'])? $this->swapConfig['settings']:[];
     	$excepts = isset($this->swapConfig['excepts'])? $this->swapConfig['excepts']:[];
 
@@ -88,6 +103,7 @@ class BaseTransform implements Jsonable,Arrayable
 		 * 取得欄位的設定名稱
 		 */
 		$setting_field = empty($parent)? $field : $parent.'.'.$field;
+
 		/**
 		 * 若是設定的欄位在例外中
 		 */
@@ -102,21 +118,36 @@ class BaseTransform implements Jsonable,Arrayable
 			return $this->doCamel($field);			
 		}
 
+		#轉換後的欄位名稱|使用的轉換器
 		$swap = $rules[$setting_field];
 
+		#非轉換器直接轉換
 		if( ! class_exists($swap)){
 			return $this->doCamel($swap);
 		}
 
+		#使用轉換器轉換欄位
 		if( $this->checkInstance($swap, BaseSwap::class)){
 			return $this->doCamel( App::make($swap,[$field])->first());	
 		}
 
+		#沒有變更名稱
 		return $this->doCamel($field);
 		
 	}
 
+	/**
+	 * 欄位值轉換器
+	 * @param  string $field  欄位名稱
+	 * @param  array $data   資料
+	 * @param  string $parent 父欄位
+	 * @return object         
+	 */
 	protected function applyFormat($field, $data, $parent=''){
+
+		/**
+		 * 取得設定資訊
+		 */
 		$rules = isset($this->formatConfig['settings'])? $this->formatConfig['settings']:[];
     	$excepts = isset($this->formatConfig['excepts'])? $this->formatConfig['excepts']:[];
 
@@ -128,6 +159,7 @@ class BaseTransform implements Jsonable,Arrayable
 		 * 取得欄位的設定名稱
 		 */
 		$setting_field = empty($parent)? $field : $parent.'.'.$field;
+
 		/**
 		 * 若是設定的欄位在例外中
 		 */
@@ -146,14 +178,26 @@ class BaseTransform implements Jsonable,Arrayable
 									
 	}
 
+	/**
+	 * 欄位字串處理
+	 * @param  string $field 欄位名稱
+	 * @return string        處理後欄位名稱
+	 */
 	protected function doCamel($field){
+
+		/**
+		 * 處理方式
+		 */
 		$operate = $this->useCamel;
 
+		#不處理
 		if($operate == 'none'){
 			return $field;
 		}
 
 		$prefix = '';
+
+		#是否包含父欄位名稱
     	if(preg_match('/(\w+)\.(\w+)/', $field, $match) == 1){
     		$prefix = $match[1];
     		$field = $match[2];
@@ -162,17 +206,28 @@ class BaseTransform implements Jsonable,Arrayable
     	
     	$prefix = $prefixSymbol = '';
     	
+    	#是否使用前輟字元
     	if($this->usePrefix){
+
     		$prefix = empty($prefix)? '': $operate($prefix);
+
+    		#連接符號
     		$prefixSymbol = $this->prefixSymbol;
     	}
     	
     	$field = $operate($field);
+
     	$finally = compact('prefix','prefixSymbol','field');
 
     	return trim(implode('', array_values($finally)));
 	}
 
+	/**
+	 * 遍歷陣列資料
+	 * @param  array $datas  資料源
+	 * @param  string $parent 父欄位名稱
+	 * @return array         
+	 */
 	protected function transformList($datas, $parent=""){
 
 		foreach($datas as $list => $data) {
@@ -185,19 +240,36 @@ class BaseTransform implements Jsonable,Arrayable
 		return $datas;
 	}
 
+	/**
+	 * 轉換資料
+	 * @param  array $datas  資料源
+	 * @param  string $parent 父欄位名稱
+	 * @return object         
+	 */
 	protected function transform($datas, $parent=""){
+
 		#不是關聯陣列
 		if( ! $this->isAssoc($datas)){
 			return $this->transformList($datas, $parent);
 		}
 
+		#處理關連陣列
 		foreach($datas as $field => $data) {			
 
+			#取得新欄位名稱
 			$newField = $this->applySwap($field, $parent);
+
 			$setting_field = empty($parent)? $field : $parent.'.'.$field;
+
+			#是否轉換欄位值
 			if(is_array($data) && !array_key_exists($setting_field, $this->formatConfig['settings'])){
+
+				#欄位值再深一層處理
 				$datas[$newField] = $this->transform($data, $field);
+
 			}else{
+
+				#處理值轉換
 				$datas[$newField] = $this->applyFormat($field, $data, $parent);
 				
 			}

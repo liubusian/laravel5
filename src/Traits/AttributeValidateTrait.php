@@ -28,13 +28,18 @@ trait AttributeValidateTrait{
 		$validator = Validator::make($datas, $this->rules, $this->messages);
 
 		if ($validator->fails()) {
-			$this->setValidResult($validator);
+			$this->throwValidFails($validator);
 		}
 
 		return true;
 	}
 
-	protected function setValidResult($validator){
+	/**
+	 * 拋出驗證失敗訊息
+	 * @param  Validator $validator 驗證器
+	 * @return EntityValidateException            
+	 */
+	protected function throwValidFails($validator){
 
 		$field = array_keys($validator->failed())[0];
 

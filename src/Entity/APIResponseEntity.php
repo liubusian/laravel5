@@ -28,7 +28,7 @@ class APIResponseEntity extends BaseEntity
 
 	}
 
-	public function _setStatusCode($value){
+	public function setStatusCode($value){
 		if(!array_key_exists($value,$this->config)){
 			$this->attribute["StatusCode"] = -2;
 		}else{
@@ -36,7 +36,7 @@ class APIResponseEntity extends BaseEntity
 		}
 	}
 
-	public function _setMessage($value){
+	public function setMessage($value){
 		
 		if(empty($value)){
 			$this->attribute["Message"] = $this->config[$this->attribute["StatusCode"]];
@@ -45,14 +45,8 @@ class APIResponseEntity extends BaseEntity
 		}
 	}
 
-	public function _setResults($value){
+	public function setResults($value){
 
-		if(is_array($value)){
-			$this->attribute["Results"] = $value;
-		}elseif($value instanceof Arrayable){
-			$this->attribute["Results"] = $value->toArray();
-		}else{
-			dd($value);
-		}
+		$this->attribute["Results"] = $this->getArrayableItems($value);
 	}
 }

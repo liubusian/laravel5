@@ -7,34 +7,17 @@ use JsonSerializable;
 use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Contracts\Support\Arrayable;
 
+/**
+ * 過濾輸入的欄位
+ */
 trait FliterInputDataTrait {
+
 	/**
-	 * 接受的欄位
+	 * 僅接受的欄位
 	 * 用來過濾掉多餘的資訊
 	 * @var array
 	 */
 	protected $accepts = [];
-
-	/**
-	 * 輸入的資料
-	 * 驗證完後的資料儲存在這裡
-	 * @var Illuminate\Support\Collection
-	 */
-	protected $inputDatas = [];
-
-	public function setInputData($attribute){
-		
-		$attribute = $this->getArrayableItems($attribute);
-
-		$this->inputDatas = $attribute;
-		
-	}
-
-	public function pushInputData($data){
-		$data = $this->getArrayableItems($data);
-		$this->inputDatas = $this->fliterAccepts(array_merge($this->inputDatas, $data));
-		return $this;
-	}
 
 	protected function fliterAccepts($data){
 
@@ -43,7 +26,7 @@ trait FliterInputDataTrait {
 		}
 
 		if( ! is_array($this->accepts)){
-			throw new Exception("The property 'accepts' must be array, ".gettype($this->accepts)." setting", 1);
+			throw new Exception("The property 'accepts' must be array, ".gettype($this->accepts)." given", 1);
 		}
 
 		$data = new Collection($data);

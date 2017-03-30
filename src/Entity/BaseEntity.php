@@ -3,38 +3,15 @@ namespace Elmer\Entity;
 
 use App;
 use Exception;
-use Transform;
-use Elmer\Transform\BaseTransform;
 use Illuminate\Support\Collection;
 use Elmer\Traits\FliterInputDataTrait;
 use Elmer\Traits\AttributeValidateTrait;
+use Elmer\Traits\CheckInstanceTrait;
 use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Contracts\Support\Arrayable;
+
 /**
-* 定義基本實體功能
-* 目的:
-* 		因應來源欄位名稱相異但資料內容相同之請求，使用相同的邏輯
-* 		則可以定義不同的請求實體，來將資料格式轉換成邏輯服務需求的資料
-* 		達到共用相同邏輯之目地
-* 		反之，若有不同邏輯使用相同來源資料
-* 		則可以將實體綁定不同的Transform來達到共用相同請求來源
-* 		亦可以減少因應不同來源使用不同路由導致程式維護困難之情況
-* 概念:
-* 		1. 設定接收的欄位與規則驗證 - Illuminate\Validation\Validator
-*   	2. 將接收的資料轉換成需要的格式或欄位 - Elmer\Transform\Transformer
-*    	3. 可以額外定義其他自訂參數
-* 	   		設定:
-* 		    	public function _get{參數名稱}(paramter) - 參數名稱字首大寫
-* 		     	若無參數輸入 會使用__get去取得值後回傳
-* 		      	若有參數輸入 會使用__call去取得值後回傳
-* 流程:
-* 		1. 建構實體 - 傳入請求資料
-* 		2. 過濾欄位 - accepts 設定
-* 		3. 驗證輸入資料 - validator 設定規則, message 設定自訂訊息
-* 		4. 儲存輸入資料 - inputDatas
-* 		5. 取回資料 - get(欄位陣列或欄位名稱) | all() | toArray | toJson | toCollect
-* 		6. 5.執行Transform (若無設定skipTransform) 回傳結果
-* 		
+* 定義Pojo類
 * @author Elmer Liu <elmerliu98133041@gmail.com>
 * @link https://github.com/liubusian/laravel5 
 * @version 0.1.0 beta
@@ -43,7 +20,7 @@ use Illuminate\Contracts\Support\Arrayable;
 */
 class BaseEntity implements Arrayable,Jsonable
 {
-	use AttributeValidateTrait, FliterInputDataTrait;	
+	use AttributeValidateTrait, FliterInputDataTrait, CheckInstanceTrait;	
 
 	/**
 	 * 此實體的資料
@@ -51,195 +28,154 @@ class BaseEntity implements Arrayable,Jsonable
 	 * 取得的資料都以此陣列資料為主
 	 * @var Illuminate\Support\Collection
 	 */
-	protected $attribute = [];
+	protected $attributes = [];
+
+	protected $oriAttribute = [];
+
+	protected $setPrefix = "set";
+
+	protected $getPrefix = "get";
 
 	/**
-	 * 轉換結果 - Elmer\Transform\Foundation\BaseTransform
-	 * 綁定的Transform
-	 * 可以綁定多個
-	 * 根據此實體的資料格式與內容轉換成需要的欄位或格式
-	 * 即Swap & Format的集合
-	 * @var Illuminate\Support\Collection
+	 * 建構子
+	 * 傳入陣列資料
+	 * @param array $inputDatas 資料源
 	 */
-	protected $transforms = [];
-
-	protected $results = [];
-
-	/**
-	 * 用來記錄是否有使用Transform
-	 * @var boolean
-	 */
-	protected $hasTransForm = false;
-	protected $skipTransform = false;
-	protected $transformBeforSet = TRUE;
-
 	public function __construct($inputDatas){
 		
-		$this->setInputData($inputDatas);
-		
-		$this->transforms = new Collection($this->transforms);
+		$this->attributes = new Collection($this->attributes);
+
+		#預設值與輸入值合併
+		$inputDatas = new Collection($inputDatas) -> merge($this->attributes);
+
+		$this->setAttributes($inputDatas);
 
 		$this->boot();
-	}	
-
-	protected function setAttribute(){
-
-		/**
-		 * 若無設定transforms或有設定skipTransform則不執行Transform
-		 */
-		if( false === $this->skipTransform && $this->transformBeforSet){
-
-			$this->applyTransform();
-
-			$this->attribute = $this->doSet($this->results);
-		}else{
-			$this->attribute = $this->doSet($this->inputDatas);
-		}
-		
 	}
 
-	protected function doSet($datas){
-
-		$datas = $this->fliterAccepts($datas);
-
-		if(empty($datas)){
-			return new Collection([]);
-		}
-		
-		if( ! empty($this->rules)){
-			$this->validate($datas);
-		}
+	/**
+	 * 呼叫使用者自定義的Set方法
+	 * @param  array $datas 資料源
+	 * @return void        
+	 */
+	protected function _callCustomSet($datas){
 
 		$datas = new Collection($datas);
 
 		$self = $this;
 
-		$attribute = $datas->map(function($value, $attr) use($self){
+		$this->attributes = $datas->map(function($value, $attr) use($self){
 
-			$setAction = "_set".ucfirst($attr);
+			$setAction = $this->setPrefix.ucfirst($attr);
 
 			if(method_exists($self, $setAction)){
 
-				return call_user_func_array([$self,$setAction], [$value]);
-	
-			}else{
-
-				return $value;
+				call_user_func_array([$self,$setAction], [$value]);
 			}
-			
 		});
 
-		return $attribute;
+	}
+
+	/**
+	 * 設定屬性
+	 * 此方法會將原本的屬性重設為空陣列後賦值
+	 * @param array $data 資料源
+	 */
+	public function setAttributes($data){
+
+		$this->attributes = new Collection([]);
+
+		$this->pushAttributes($data);
 		
 	}
 
-	public function applyTransform(){
+	/**
+	 * 新增資料
+	 * @param  array $data 資料源
+	 * @return 
+	 */
+	public function pushAttributes($data){		
 
-		$transforms = $this->transforms->all();
+		#備份原始資料
+		$this->oriAttribute = new Collection($this->attributes);
 
-		$datas = empty($this->inputDatas)? []: $this->inputDatas;
+		#確定為陣列資料
+		$data = $this->getArrayableItems($data);
 
-		if(empty($transforms) || empty($datas)){
-			$this->results = $datas;
-			return $this;
+		#過濾資料
+		$data = $this->fliterAccepts($data);
+
+		#驗證資料
+		if( ! empty($this->rules)){
+			$this->validate($data);
 		}
 
-		$tmp = [];
-		
-		foreach ($transforms as $transform) {			
+		#合併新資料
+		$this->attributes = $this->attributes->merge($data);
 
-			$tmp = Transform::make($transform, $datas);
-			
-		}
-		
-		$this->hasTransForm = TRUE;
-		
-		$this->results = new Collection($tmp);
-		
-		return $this;
-	}
-
-	public function pushTransform($transform){
-
-		if( ! $this->checkInstance($transform, BaseTransform::class)){
-			throw new Exception("pushTransform() parameter 1 must be BaseTransform");
-		}
-
-		$this->transforms->push($transform);
+		#呼叫自訂set
+		$this->_callCustomSet($this->attributes)
 
 		return $this;
 	}
 
-	public function skipTransform($boolen = TRUE){
-		$this->skipTransform = $boolen;
-		return $this;
-	}
+	
 
-	public function transformBeforSet($boolen = FALSE){
-		$this->transformBeforSet = $boolen;
-		return $this;
-	}
-
+	/**
+	 * 輸出陣列
+	 * @return array 實體資料
+	 */
 	public function toArray(){
 
-		if($this->hasTransForm){	
-			return $this->attribute->toArray();
-
-		}else{
-			if($this->transformBeforSet){
-				$this->setAttribute();
-				return $this->attribute->toArray();
-			}else{
-				$this->applyTransform();
-				return $this->results->toArray();
-			}
-		}
+		$this->attributes->toArray();
 		
 	}
 
+	/**
+	 * 輸出JSON
+	 * @param  integer $options 輸出格式
+	 * @return json           
+	 */
 	public function toJson($options=0){
-		return json_encode($this->toArray());
+		return json_encode($this->toArray(), $options);
 	}
 
-	public function toCollection(){
-		return new Collection($this->toArray());
-	}
-
+	/**
+	 * 同toArray
+	 * @see  toArray 
+	 * @return array 
+	 */
 	public function all(){
 		return $this->toArray();
 	}
 
-	public function get($key){
-
-		$results = $this->toCollection();
-
-
-		return $results->get($key);
-	}
-
-	 
-
 	public function __get($key){
 
-		$method = "_get".ucfirst($key);
+		$method = $this->getPrefix.ucfirst($key);
 
 		if(method_exists($this, $method)){
 
 			return $this->$method();
 		}
 
-		return $this->get($key);
+		if($this->attributes->has($key)){
+			return $this->attributes->get($key,null);
+		}
 	}
 
-	protected function checkInstance($string, $class){
-    	$relflection = new \ReflectionClass($string);
+	public function __set($k, $v){
 
-		$inputClass = $relflection->getParentClass()->name;
+		$method = $this->setPrefix.ucfirst($k);
 
-        return ($class === $inputClass);
-    }
+		if(method_exists($this, $method)){
 
-    
+			return $this->$method($v);
+		}
+
+		$d = [$k=>$v];
+
+		$this->pushAttributes($d);
+	}
 
     protected function boot(){
 
