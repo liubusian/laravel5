@@ -41,14 +41,16 @@ class BaseEntity implements Arrayable,Jsonable
 	 * 傳入陣列資料
 	 * @param array $inputDatas 資料源
 	 */
-	public function __construct($inputDatas){
+	public function __construct($inputDatas = []){
 		
 		$this->attributes = new Collection($this->attributes);
 
 		#預設值與輸入值合併
-		$inputDatas = new Collection($inputDatas) -> merge($this->attributes);
+		$inputDatas = new Collection($inputDatas);
+		$inputDatas = $inputDatas-> merge($this->attributes);
 
 		$this->setAttributes($inputDatas);
+
 
 		$this->boot();
 	}
@@ -64,7 +66,7 @@ class BaseEntity implements Arrayable,Jsonable
 
 		$self = $this;
 
-		$this->attributes = $datas->map(function($value, $attr) use($self){
+		$datas->map(function($value, $attr) use($self){
 
 			$setAction = $this->setPrefix.ucfirst($attr);
 
@@ -83,22 +85,6 @@ class BaseEntity implements Arrayable,Jsonable
 	 */
 	public function setAttributes($data){
 
-		$this->attributes = new Collection([]);
-
-		$this->pushAttributes($data);
-		
-	}
-
-	/**
-	 * 新增資料
-	 * @param  array $data 資料源
-	 * @return 
-	 */
-	public function pushAttributes($data){		
-
-		#備份原始資料
-		$this->oriAttribute = new Collection($this->attributes);
-
 		#確定為陣列資料
 		$data = $this->getArrayableItems($data);
 
@@ -108,13 +94,34 @@ class BaseEntity implements Arrayable,Jsonable
 		#驗證資料
 		if( ! empty($this->rules)){
 			$this->validate($data);
-		}
+		}		
+
+		#備份原始資料
+		$this->oriAttribute = new Collection($this->attributes);
+
+		$this->attributes = new Collection([]);
 
 		#合併新資料
 		$this->attributes = $this->attributes->merge($data);
 
 		#呼叫自訂set
-		$this->_callCustomSet($this->attributes)
+		$this->_callCustomSet($this->attributes);
+
+	}
+
+	/**
+	 * 新增資料
+	 * @param  array $data 資料源
+	 * @return 
+	 */
+	public function pushAttributes($data){		
+
+		#確定為陣列資料
+		$data = new Collection($data);
+
+		$data = $data->merge($this->attributes);
+
+		$this->setAttributes($data);
 
 		return $this;
 	}
