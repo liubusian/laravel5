@@ -15,18 +15,49 @@ class APIResponse implements Arrayable,Jsonable
 
 	public function __construct($StatusCode, $Message='', $Results=[], $merge=[])
 	{
-		if(is_array($StatusCode) && isset($StatusCode["StatusCode"])){
+		$this->responses = new APIResponseEntity([]);
 
-			$responses = new APIResponseEntity($StatusCode);
+		if($StatusCode instanceof \Exception){
+			
+			$this->parseExceptionResult($StatusCode);
+
+		}elseif(is_array($StatusCode) && isset($StatusCode["StatusCode"])){
+
+			$this->responses->StatusCode = $StatusCode;
+
 		}else{
-			$responses = new APIResponseEntity(compact($this->guard));
+
+			$this->responses = new APIResponseEntity(compact($this->guard));
 		}
-		$this->responses = $responses->toArray();
+
 		$this->setMerge($merge);
 
 	}
 
+	protected function parseExceptionResult($e){
+		$this->responses->StatusCode = $e->getCode();
+		$this->responses->Message = $this->getCurryMessage($e->getMessage());
+	}
+
+	protected function getCurryMessage($messages){
+
+		if( ! empty($messages)){
+
+			return $messages;
+		}
+
+		$config = config('response.api');
+
+		if(array_key_exists($this->responses->StatusCode, $config)){
+			return $config[$this->responses->StatusCode];
+		}else{
+			$this->responses->StatusCode = -2;
+			return $messages;
+		}
+	}
+
 	protected function setMerge($merge){
+
 		if(empty($merge)){
 			return;
 		}
@@ -42,7 +73,7 @@ class APIResponse implements Arrayable,Jsonable
 	}
 
 	public function toArray(){
-		$datas = array_merge($this->responses,$this->merge);
+		$datas = array_merge($this->responses->all(),$this->merge);
 		return $datas;		
 	}
 

@@ -47,11 +47,9 @@ class BaseEntity implements Arrayable,Jsonable
 
 		#預設值與輸入值合併
 		$inputDatas = new Collection($inputDatas);
-		$inputDatas = $inputDatas-> merge($this->attributes);
-
+		
 		$this->setAttributes($inputDatas);
-
-
+		
 		$this->boot();
 	}
 
@@ -134,7 +132,7 @@ class BaseEntity implements Arrayable,Jsonable
 	 */
 	public function toArray(){
 
-		$this->attributes->toArray();
+		return $this->attributes->toArray();
 		
 	}
 
