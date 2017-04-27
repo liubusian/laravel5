@@ -43,7 +43,7 @@ class BaseTransform implements Jsonable,Arrayable
 	 * [
 	 * 		//定義格式 formatClass@paramater|formatName:operate
 	 * 		//左側格式適用於未註冊的format
-	 * 		//右側格式適用於已註冊Format Facade的format
+	 * 		//右側格式適用於已註冊的format
 	 * 		//ex:
 	 * 		'settings'=>[
 	 * 			'paided_at' => "date:'Y-m-d H:i:s'|null:string", //預設有date null json 可用
@@ -284,17 +284,14 @@ class BaseTransform implements Jsonable,Arrayable
 	}
 
 	public function make($data){
-
-
-		$this->setInputData($data);
-
-		$this->inputDatas = $this->fliterAccepts($this->inputDatas);
+		
+		$data = $this->fliterAccepts($data);
 
 		if( ! empty($this->rules)){
-			$this->validate($this->inputDatas);
+			$this->validate($data);
 		}
 
-		$this->items = $this->transform($this->inputDatas);
+		$this->items = $this->transform($data);
 		
 		return $this;
 	}

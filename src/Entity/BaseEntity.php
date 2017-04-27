@@ -78,7 +78,6 @@ class BaseEntity implements Arrayable,Jsonable
 
 	/**
 	 * 設定屬性
-	 * 此方法會將原本的屬性重設為空陣列後賦值
 	 * @param array $data 資料源
 	 */
 	public function setAttributes($data){
@@ -97,7 +96,7 @@ class BaseEntity implements Arrayable,Jsonable
 		#備份原始資料
 		$this->oriAttribute = new Collection($this->attributes);
 
-		$this->attributes = new Collection([]);
+		//$this->attributes = new Collection([]);
 
 		#合併新資料
 		$this->attributes = $this->attributes->merge($data);
@@ -117,7 +116,7 @@ class BaseEntity implements Arrayable,Jsonable
 		#確定為陣列資料
 		$data = new Collection($data);
 
-		$data = $data->merge($this->attributes);
+		//$data = $this->attributes->merge($data);
 
 		$this->setAttributes($data);
 
