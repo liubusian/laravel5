@@ -84,4 +84,9 @@ class APIResponse implements Arrayable,Jsonable
 	public function show(){
 		echo $this->toJson();
 	}
+
+	public function __get($key){
+
+		return $this->responses->$key;
+	}
 }
