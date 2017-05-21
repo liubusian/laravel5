@@ -3,6 +3,7 @@ namespace Elmer\Entity;
 
 use App;
 use Exception;
+use Elmer\Transform\TransformService;
 use Illuminate\Support\Collection;
 use Elmer\Traits\FliterInputDataTrait;
 use Elmer\Traits\AttributeValidateTrait;
@@ -35,6 +36,8 @@ class BaseEntity implements Arrayable,Jsonable
 	protected $setPrefix = "set";
 
 	protected $getPrefix = "get";
+
+	protected $transforms = [];
 
 	/**
 	 * 建構子
@@ -183,5 +186,17 @@ class BaseEntity implements Arrayable,Jsonable
 
     protected function boot(){
 
+    }
+
+    public function TransTo($name){
+
+    	if(empty($name)){
+    		throw new Exception("transform '$name' does not exist");
+    	}
+    	
+    	$transform = App::make($this->transforms[$name]);
+
+    	$service = App::make(TransformService::class);
+    	return $service->make($transform, $this->all());
     }
 }

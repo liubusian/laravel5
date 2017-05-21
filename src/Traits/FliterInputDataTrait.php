@@ -21,6 +21,8 @@ trait FliterInputDataTrait {
 
 	protected function fliterAccepts($data){
 
+		$data = $this->getArrayableItems($data);
+
 		if(empty($this->accepts)){
 			return $data;
 		}

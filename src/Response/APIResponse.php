@@ -72,6 +72,13 @@ class APIResponse implements Arrayable,Jsonable
 
 	}
 
+	public function merge($data){
+
+		$merge = collect($this->merge);
+
+		$this->merge = $merge->merge($data)->all();
+	}
+
 	public function toArray(){
 		$datas = array_merge($this->responses->all(),$this->merge);
 		return $datas;		

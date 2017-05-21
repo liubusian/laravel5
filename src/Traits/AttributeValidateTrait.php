@@ -58,7 +58,7 @@ trait AttributeValidateTrait{
 			$value = "null";
 		}
 
-		$message = $validator->errors()->toArray()[$field][0]." : ".$value;
+		$message = $field.' '.$validator->errors()->toArray()[$field][0]." : ".$value;
 
 		$this->validFalied = compact("field","rule","message");
 		
