@@ -29,10 +29,10 @@ class APIResponseEntity extends BaseEntity
 	}
 
 	public function setStatusCode($value){
+		
 		if(empty($this->config)){
-			return $this->attribute["StatusCode"] = $value;
-		}
-		if(!array_key_exists($value,$this->config)){
+			$this->attribute["StatusCode"] = $value;
+		}elseif(!array_key_exists($value,$this->config)){
 			$this->attribute["StatusCode"] = -2;
 		}else{
 			$this->attribute["StatusCode"] = $value;

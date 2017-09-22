@@ -35,8 +35,11 @@ class APIResponse implements Arrayable,Jsonable
 	}
 
 	protected function parseExceptionResult($e){
-		$this->responses->StatusCode = $e->getCode();
-		$this->responses->Message = $this->getCurryMessage($e->getMessage());
+
+		$this->responses->setStatusCode($e->getCode() >= 0 ? -2 : $e->getCode());
+
+		$this->responses->setMessage($this->getCurryMessage($e->getMessage()));
+
 	}
 
 	protected function getCurryMessage($messages){
